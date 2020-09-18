@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "besu.fullname" . }}
+  labels:
+    {{- include "besu.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "besu.selectorLabels" . | nindent 6 }}
+  serviceName: {{ template "besu.fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "besu.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args: ["--config-file=/etc/besu/config.toml", "--nat-method=KUBERNETES"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            requests:
+              cpu: {{ .Values.resources.cpuRequest }}
+              memory: {{ .Values.resources.memRequest }}
+            limits:
+              cpu: {{ .Values.resources.cpuLimit }}
+              memory: {{ .Values.resources.memLimit }}
+          volumeMounts:
+            - name: config-toml
+              mountPath: /etc/besu
+              readOnly: true
+            - name: data
+              mountPath: {{ .Values.config.dataPath }}
+          ports:
+            {{- if .Values.config.rpc.enabled  }}
+            - name: rpc
+              containerPort: {{ .Values.config.rpc.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.config.ws.enabled  }}
+            - name: ws
+              containerPort: {{ .Values.config.ws.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.config.graphql.enabled  }}
+            - name: graphql
+              containerPort: {{ .Values.config.graphql.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.config.p2p.enabled  }}
+            - name: rlpx
+              containerPort: {{ .Values.config.p2p.port }}
+              protocol: TCP
+            - name: discovery
+              containerPort: {{ .Values.config.p2p.port }}
+              protocol: UDP
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: rpc
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: rpc
+            initialDelaySeconds: 120
+            periodSeconds: 30  
+      securityContext:
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+      volumes:
+        - name: config-toml
+          configMap:
+            name: {{ template "besu.fullname" . }}-toml-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: 
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: "{{ .Values.storage.pvcSizeRequest }}"

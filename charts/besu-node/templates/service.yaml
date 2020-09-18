@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "besu.fullname" . }}
+  labels:
+    {{- include "besu.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "besu.selectorLabels" . | nindent 4 }}
+  ports:
+    {{- if .Values.config.rpc.enabled }}
+    - name: rpc
+      port: {{ .Values.config.rpc.port }}
+      targetPort: rpc
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.config.ws.enabled }}
+    - name: ws
+      port: {{ .Values.config.ws.port }}
+      targetPort: ws
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.config.graphql.enabled }}
+    - name: graphql
+      port: {{ .Values.config.graphql.port }}
+      targetPort: graphql
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.config.p2p.enabled }}
+    - name: rlpx
+      port: {{ .Values.config.p2p.port }}
+      targetPort: rlpx
+      protocol: TCP
+    {{- end }}

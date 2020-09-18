@@ -1,0 +1,14 @@
+Your release of {{ .Chart.Name }} is named '{{ .Release.Name }}'.
+
+To get the external RPC IP:PORT tuple, execute:
+
+  $ export RPC_ADDRESS=$(kubectl get svc -n {{ .Values.namespace }} {{ template "besu.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}:{.spec.ports[?(@.name=="rpc")].port}')
+  $ echo http://${RPC_ADDRESS}
+
+To verify it is running and connected:
+
+  $ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' ${RPC_ADDRESS}
+
+To verify its syncing state: 
+
+  $ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' ${RPC_ADDRESS}

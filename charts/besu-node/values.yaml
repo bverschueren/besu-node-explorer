@@ -1,0 +1,86 @@
+# Default values for besu.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: hyperledger/besu
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# The namespace the resources in this chart are deployed in
+namespace: ""
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+storage:
+  pvcSizeRequest: "1Gi"
+  pvcStorageClass: "standard"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+resources:
+  memRequest: "1024Mi"
+  memLimit: "2048Mi"
+  cpuRequest: "100m"
+  cpuLimit: "500m"
+
+securityContext:
+  fsGroup: 2000
+  runAsUser: 1000
+  runAsGroup: 3000
+
+# In scenario's where the node's external IP needs to be determined from within other Helm templates (e.g. lookup function)
+# the serviceType must be LoadBalancer and socan't be Ingress with ClusterIP
+service:
+  type: LoadBalancer
+
+# Ingress can be used in scenario's where the external IP/hostname can be determined up front.
+ingress:
+  enabled: false
+  paths:
+    - path: /rpc(/|$)(.*)
+      port: rpc
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+# common parameters to all nodes
+config:
+  dataPath: "/data"
+  network: ""
+  logging: DEBUG
+  p2p:
+    enabled: true
+    host: "0.0.0.0"
+    port: 30303
+    discovery: true
+    maxPeers: 25
+  rpc:
+    enabled: true
+    host: "0.0.0.0"
+    port: 8545
+    api: '["DEBUG","ETH", "ADMIN", "WEB3", "IBFT", "NET"]'
+    corsOrigins: '["*"]'
+    authenticationEnabled: false
+  ws:
+    enabled: false
+    host: "0.0.0.0"
+    port: 8546
+    api: '["DEBUG", "ETH", "WEB3", "NET"]'
+    authenticationEnabled: false
+  graphql:
+    enabled: false
+    host: "0.0.0.0"
+    port: 8547
+    corsOrigins: '["all"]'
+  http:
+    allowlist: '["*"]'
+  extra: {}
