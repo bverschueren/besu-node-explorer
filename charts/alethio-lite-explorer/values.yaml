@@ -1,0 +1,61 @@
+# Default values for alethio-lite-explorer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  # In scenario's that require the use of a subpath the fixed subpah needs to be configured in the build.
+  repository: bverschueren/alethio-lite-explorer-subpath
+  tag: latest
+  pullPolicy: Always
+
+namespace: ""
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+
+## Aleth's Lite Client configuration options
+## URL: https://github.com/Alethio/ethereum-lite-explorer#running-in-docker
+##
+config:
+
+  ## URL of RPC enabled node. (e.g. https://host:port, also supports Basic Auth by prepending user:pass@ to the host). 
+  ## This overrides in the config file the nodeUrl attribute of the eth-lite core plugin.
+  #
+  appNode:
+    # full URL in scenario's where this is known up front
+    url: ""
+    # In scenario's where we need to determine the Node API at runtime this is done using a lookup to the Service resource.
+    serviceName: ""
+    servicePort: 8545
+
+  ## It is used ONLY in index.html for og:tags (e.g. https://my.app.tld). Overrides build time defined value.
+  #
+  appBaseUrl: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+ingress:
+  ## Enables or disables ingress for this Chart
+  ##
+  enabled: true
+
+  ## Add annotations as required for your Ingress controller.
+  ##
+  annotations: 
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+  path: "/explorer(/|$)(.*)"

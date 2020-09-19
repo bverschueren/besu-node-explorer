@@ -1,0 +1,52 @@
+{{- $service := (lookup "v1" "Service" .Values.namespace .Values.config.appNode.serviceName) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alethio-lite-explorer.fullname" . }}
+  labels:
+    {{- include "alethio-lite-explorer.labels" . | nindent 4 }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "alethio-lite-explorer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "alethio-lite-explorer.selectorLabels" . | nindent 8 }}
+    spec:
+            #      serviceAccountName: {{ include "alethio-lite-explorer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: APP_NODE_URL
+            {{- if .Values.config.appNode.url }}
+            value: {{ .Values.config.appNode.url }}
+            {{- else if .Values.config.appNode.serviceName }}
+            {{- if $service }}
+            value: http://{{ (index $service.status.loadBalancer.ingress 0).ip }}:{{ .Values.config.appNode.servicePort }}
+            {{- end }}
+            {{ end }}
+          - name: APP_BASE_URL
+            value: {{ .Values.config.appBaseUrl }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

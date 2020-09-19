@@ -1,0 +1,8 @@
+Your release of {{ .Chart.Name }} is named '{{ .Release.Name }}'.
+
+To get the external address, execute:
+
+  $ export EXTERNAL_IP=$(kubectl get ing -n {{ .Values.namespace }} {{ include "alethio-lite-explorer.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+  $ echo http://${EXTERNAL_IP}/explorer
+

@@ -1,0 +1,3 @@
+- require one of appNode.url appNode.ingressName
+- use __placeholder__ instead of fixed 'explorer' string
+- use readiness check for rpc port availability
