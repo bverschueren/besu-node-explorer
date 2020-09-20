@@ -1,0 +1,39 @@
+helmDefaults:
+  createNamespace: true
+
+repositories:
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+
+templates:
+  default: &default
+    namespace: assignment
+    valuesTemplate:
+      - namespace: '{{`{{ .Release.Namespace }}`}}'
+
+releases:
+  - name: node
+    <<: *default
+    chart: ./charts/besu-node
+    wait: true
+    values:
+      - resources:
+          memRequest: 500m
+      - config:
+          network: "goerli" 
+      - fullnameOverride: "besu-goerli-node"
+
+  - name: ingress-nginx
+    <<: *default
+    chart: ingress-nginx/ingress-nginx
+
+  - name: explorer
+    <<: *default
+    chart: ./charts/alethio-lite-explorer
+    values:
+      - config:
+          appNode:
+            serviceName: "besu-goerli-node"
+    needs:
+      - assignment/node
+      - assignment/ingress-nginx
